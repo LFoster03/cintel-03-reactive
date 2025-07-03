@@ -11,9 +11,10 @@ from shinywidgets import render_plotly
 # Load penguins dataset
 penguins_df = palmerpenguins.load_penguins().dropna()
 
-# ----- Sidebar -----
+# ----- Page Setup -----
 ui.page_opts(title="Penguin Data Exploration Histograms", fillable=True)
 
+# ----- Sidebar -----
 with ui.sidebar(open="open"):
     ui.h2("Sidebar")
 
@@ -48,67 +49,64 @@ def filtered_penguins():
 
 
 # ----- Data Table + Data Grid -----
-# ----- Data Table + Data Grid -----
 with ui.layout_columns():
     with ui.card(full_screen=True):
+        ui.card_header("Data Table: Filtered Species")
 
-        ui.card_header("Data Table and Grid: Species")
-        
-    @render.data_frame
-    def table_view():
-        return render.DataTable(filtered_penguins())
+        @render.data_frame
+        def table_view():
+            return render.DataTable(filtered_penguins())
 
-    @render.data_frame
-    def grid_view():
-        return render.DataGrid(filtered_penguins())
+    with ui.card(full_screen=True):
+        ui.card_header("Data Grid: Filtered Species")
 
-# Main layout for histograms side by side
+        @render.data_frame
+        def grid_view():
+            return render.DataGrid(filtered_penguins())
+
+
+# ----- Plotly & Seaborn Histograms -----
 with ui.layout_columns():
-
-    # Reactive filtered dataframe based on selected species
-    @reactive.Calc
-    def filtered_penguins():
-        selected = input.selected_species_list()
-        return penguins_df[penguins_df["species"].isin(selected)]
-
-    # Plotly histogram reacting to selected attribute and bins
     with ui.card(full_screen=True):
         ui.card_header("Plotly Histogram: Species")
-    
-    @render_plotly
-    def plotly_histogram():
-        df = filtered_penguins()
-        attr = input.selected_attribute()
-        bins = input.plotly_bin_count()
-        if attr and bins:
-            return px.histogram(df, x=attr, nbins=bins, color="species")
 
-    # Seaborn histogram reacting to selected attribute and bins
-    @render.plot
-    def seaborn_histogram():
-        df = filtered_penguins()
-        attr = input.selected_attribute()
-        bins = input.seaborn_bin_count()
-        if attr and bins:
-            plt.figure(figsize=(6, 4))
-            sns.histplot(data=df, x=attr, hue="species", bins=bins)
-            plt.title(f"Seaborn Histogram of {attr}")
-            plt.tight_layout()
+        @render_plotly
+        def plotly_histogram():
+            df = filtered_penguins()
+            attr = input.selected_attribute()
+            bins = input.plotly_bin_count()
+            if attr and bins:
+                return px.histogram(df, x=attr, nbins=bins, color="species", title=f"Plotly Histogram of {attr}")
 
-# Plotly Scatterplot
+    with ui.card(full_screen=True):
+        ui.card_header("Seaborn Histogram: Species")
+
+        @render.plot
+        def seaborn_histogram():
+            df = filtered_penguins()
+            attr = input.selected_attribute()
+            bins = input.seaborn_bin_count()
+            if attr and bins:
+                plt.figure(figsize=(6, 4))
+                sns.histplot(data=df, x=attr, hue="species", bins=bins)
+                plt.title(f"Seaborn Histogram of {attr}")
+                plt.tight_layout()
+
+
+# ----- Plotly Scatterplot -----
 with ui.card(full_screen=True):
-
     ui.card_header("Plotly Scatterplot: Species")
-    
-@render_plotly
-def plotly_scatterplot():
-    df = filtered_penguins()  # your reactive filtered data
-    return px.scatter(
-        df,
-        x="bill_length_mm",
-        y="flipper_length_mm",
-        color="species",
-        symbol="species",
-        size="body_mass_g",
-        hover_data=["species", "island"]
-    )
+
+    @render_plotly
+    def plotly_scatterplot():
+        df = filtered_penguins()
+        return px.scatter(
+            df,
+            x="bill_length_mm",
+            y="flipper_length_mm",
+            color="species",
+            symbol="species",
+            size="body_mass_g",
+            hover_data=["species", "island"],
+            title="Scatterplot of Bill Length vs Flipper Length"
+        )
