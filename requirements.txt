@@ -1,3 +1,7 @@
+shiny
+shinywidgets
+palmerpenguins
 pandas
 plotly
-palmerpenguins
+seaborn
+matplotlib
