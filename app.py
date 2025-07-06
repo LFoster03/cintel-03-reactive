@@ -4,7 +4,7 @@ import plotly.express as px
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-from shiny import reactive, render
+from shiny import reactive, render, req
 from shiny.express import input, ui
 from shinywidgets import render_plotly
 
@@ -36,29 +36,43 @@ with ui.sidebar(open="open"):
         inline=True
     )
 
+    # ✅ Step 1: Add island checkbox group
+    ui.input_checkbox_group(
+        "selected_island_list",
+        "Select Islands",
+        ["Biscoe", "Dream", "Torgersen"],
+        selected=["Biscoe", "Dream", "Torgersen"],
+        inline=True
+    )
+
     ui.hr()
 
-    ui.a("GitHub", href="https://github.com/LFoster03/cintel-02-data", target="_blank")
+    ui.a("GitHub", href="https://github.com/LFoster03/cintel-03-reactive/tree/main", target="_blank")
 
 
 # ----- Reactive Filter -----
 @reactive.calc
 def filtered_penguins():
-    selected = input.selected_species_list()
-    return penguins_df[penguins_df["species"].isin(selected)]
+    req(input.selected_species_list())
+    req(input.selected_island_list())
+    species_selected = input.selected_species_list()
+    island_selected = input.selected_island_list()
+    species_match = penguins_df["species"].isin(species_selected)
+    island_match = penguins_df["island"].isin(island_selected)
+    return penguins_df[species_match & island_match]
 
 
 # ----- Data Table + Data Grid -----
 with ui.layout_columns():
     with ui.card(full_screen=True):
-        ui.card_header("Data Table: Filtered Species")
+        ui.card_header("Data Table: Filtered Species & Islands")
 
         @render.data_frame
         def table_view():
             return render.DataTable(filtered_penguins())
 
     with ui.card(full_screen=True):
-        ui.card_header("Data Grid: Filtered Species")
+        ui.card_header("Data Grid: Filtered Species & Islands")
 
         @render.data_frame
         def grid_view():
@@ -110,3 +124,25 @@ with ui.card(full_screen=True):
             hover_data=["species", "island"],
             title="Scatterplot of Bill Length vs Flipper Length"
         )
+
+# ----- Island Histogram -----
+with ui.card(full_screen=True):
+    ui.card_header("Penguin Count by Species and Island")
+
+    @render_plotly
+    def species_island_histogram():
+        df = filtered_penguins()
+        if not df.empty:
+            return px.histogram(
+                df,
+                x="species",              # You can also try "island" here
+                color="island",           # Try color="species" if you flip axes
+                barmode="group",
+                title="Count of Penguins by Species and Island"
+            )
+        else:
+            # Show empty chart message
+            return px.histogram(
+                pd.DataFrame({"x": [], "y": []}),
+                title="No data to display. Try adjusting filters."
+            )
