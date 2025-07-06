@@ -36,7 +36,7 @@ with ui.sidebar(open="open"):
         inline=True
     )
 
-    # ✅ Step 1: Add island checkbox group
+    # Add island checkbox group
     ui.input_checkbox_group(
         "selected_island_list",
         "Select Islands",
